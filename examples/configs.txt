@@ -1,0 +1,16 @@
+# IBROVIX-Validator Example Configs
+# ================================
+# These are SAMPLE configs for testing the parser.
+# Replace with your actual configs for validation.
+
+# === VMess Configs ===
+vmess://eyJ2IjoiMiIsInBzIjoiU2FtcGxlIFZTIC0gS2ZpZnZlciIsImFkZCI6ImZha2VuZXcuZXhtYXBsZS5jb20iLCJwb3J0Ijo0NDMsImlkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwIiwiYWlkIjoiMCIsInNjeSI6ImF1dG8iLCJuZXQiOiJ3cyIsInR5cGUiOiJub25lIiwiaG9zdCI6ImZha2VuZXcuZXhhbXBsZS5jb20iLCJwYXRoIjoiLyIsInRscyI6InRscyIsInNuaSI6ImZha2VuZXcuZXhhbXBsZS5jb20ifQ==
+
+# === VLESS Configs ===
+vless://00000000-0000-0000-0000-000000000000@fake1.example.com:443?encryption=none&security=tls&type=ws&host=fake1.example.com&path=/&fp=chrome&sni=fake1.example.com#Sample-VLESS
+
+# === Trojan Configs ===
+trojan://sample_password@fake2.example.com:443?security=tls&sni=fake2.example.com&type=tcp#Sample-Trojan
+
+# === SSH Configs ===
+ssh://sample_user@fake3.example.com:22

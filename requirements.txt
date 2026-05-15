@@ -1,0 +1,8 @@
+# IBROVIX-Validator dependencies
+# Core: no external dependencies required for basic functionality
+# aiohttp is optional — only needed for IP geolocation feature
+
+# Optional dependencies (install with: pip install ibrovix-validator[geo,dev])
+aiohttp>=3.9.0          # HTTP client for IP geolocation API
+pytest>=7.0.0            # Test framework
+pytest-asyncio>=0.21.0   # Async test support
