@@ -19,7 +19,7 @@ High-performance validation and filtering tool for V2Ray, SSH, and Trojan protoc
 
 ```bash
 # Clone the repository
-git clone https://github.com/ibrovix/ibrovix-validator.git
+git clone https://github.com/IBROVIX1/ibrovix-validator.git
 cd ibrovix-validator
 
 # Install dependencies
