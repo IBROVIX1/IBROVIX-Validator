@@ -37,6 +37,7 @@ Repository = "https://github.com/IBROVIX1/ibrovix-validator"
 [project.optional-dependencies]
 dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "pytest-cov>=4.0.0"]
 geo = ["aiohttp>=3.9.0"]
+harvester = ["httpx>=0.25.0"]
 
 [project.scripts]
 ibrovix-validator = "ibrovix_validator.cli:main"

@@ -4,6 +4,7 @@ from .vmess import VmessParser
 from .vless import VlessParser
 from .trojan import TrojanParser
 from .ssh import SSHParser
+from .ss import ShadowsocksParser
 
 # Registry: map protocol type string -> parser instance
 _registry: dict[str, object] = {}
@@ -38,6 +39,8 @@ def detect_protocol(line: str) -> str | None:
         return "vless"
     if line.startswith("trojan://"):
         return "trojan"
+    if line.startswith("ss://"):
+        return "ss"
     if line.startswith("ssh://") or "@" in line or ":" in line.replace("ssh://", ""):
         # Could be SSH — let the parser handle it
         return "ssh"
@@ -48,8 +51,10 @@ _vmess = VmessParser()
 _vless = VlessParser()
 _trojan = TrojanParser()
 _ssh = SSHParser()
+_ss = ShadowsocksParser()
 
 register_parser("vmess", _vmess)
 register_parser("vless", _vless)
 register_parser("trojan", _trojan)
 register_parser("ssh", _ssh)
+register_parser("ss", _ss)

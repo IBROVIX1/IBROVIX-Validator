@@ -15,3 +15,10 @@ from . import validators
 from . import filters
 from . import utils
 from . import cli
+from . import harvester
+from .harvester import ConfigHarvester, HarvestResult
+
+__all__ = [
+    "parsers", "validators", "filters", "utils", "cli", "harvester",
+    "ConfigHarvester", "HarvestResult",
+]

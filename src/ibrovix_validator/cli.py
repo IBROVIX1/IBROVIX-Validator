@@ -13,6 +13,7 @@ from .validators import FormatValidator, HandshakeValidator, SNIChecker
 from .filters import FilterEngine
 from .utils.io import ConfigReader, ConfigWriter
 from .utils.output import OutputFormatter, Colorizer
+from .harvester import ConfigHarvester, HarvestResult
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,6 +36,32 @@ def build_parser() -> argparse.ArgumentParser:
         "input",
         nargs="?",
         help="Input file with proxy configs (reads from stdin if omitted)",
+    )
+
+    # Harvester options
+    parser.add_argument(
+        "--harvest",
+        action="store_true",
+        help="Enable live proxy harvesting mode — fetch configs from public sources",
+    )
+    parser.add_argument(
+        "--source",
+        "-s",
+        action="append",
+        dest="sources",
+        default=[],
+        metavar="URL",
+        help="Custom subscription/raw config URL(s) to harvest from (can be used multiple times)",
+    )
+    parser.add_argument(
+        "--default-sources",
+        action="store_true",
+        help="Include built-in default public sources (freefq, surfboardv2ray, etc.)",
+    )
+    parser.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable harvester progress output",
     )
 
     # Actions
@@ -196,32 +223,109 @@ def run_cli(argv: Optional[list[str]] = None) -> int:
 
     formatter = OutputFormatter(use_color=not args.no_color)
 
-    # Read input
-    lines: list[str] = []
-    if args.input:
+    # Read input — either from harvester or file/stdin
+    parsed: list[dict] = []
+    harvest_result: Optional[HarvestResult] = None
+
+    def _run_harvester(sources: Optional[list[str]], use_defaults: bool) -> Optional[HarvestResult]:
+        """Run the harvester and print results. Returns harvest_result or None on failure."""
+        print("🌐 IBROVIX Harvester — fetching live proxy configs...", file=sys.stderr)
+        print(f"  Sources: {'custom URLs' if sources else 'none'}{' + defaults' if use_defaults else ''}", file=sys.stderr)
+
+        h = ConfigHarvester(
+            timeout=cfg.tcp_timeout * 3,
+            max_concurrent=min(args.workers, 20),
+            progress=not args.no_progress,
+        )
+
+        hr = asyncio.run(
+            h.harvest(
+                sources=sources,
+                use_defaults=use_defaults,
+            )
+        )
+
+        if hr.total_unique == 0:
+            print("\nWarning: No configs were harvested.", file=sys.stderr)
+            return None
+
+        print(f"\n{h.format_result_summary(hr)}", file=sys.stderr)
+        print(file=sys.stderr)
+        return hr
+
+    # Determine input source priority:
+    #   1. Explicit --harvest / --source / --default-sources flags
+    #   2. Input file argument
+    #   3. Data piped via stdin (non-TTY)
+    #   4. Auto-harvest with defaults (if nothing else is available)
+    #
+    input_from_stdin = not sys.stdin.isatty()
+
+    if args.harvest or args.sources or args.default_sources:
+        # --- Explicit harvester mode ---
+        hr = _run_harvester(
+            sources=args.sources if args.sources else None,
+            use_defaults=args.default_sources or not args.sources,
+        )
+        if hr is None:
+            if args.stats:
+                print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
+            return 0
+        harvest_result = hr
+        parsed = hr.unique_configs
+
+    elif args.input:
+        # --- File input mode ---
         try:
             lines = ConfigReader.from_file(args.input)
         except FileNotFoundError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 1
-    else:
+
+        for line in lines:
+            result = parse_line(line)
+            if result is not None:
+                parsed.append(result)
+
+        if not parsed:
+            print("Warning: No valid configs found in input.", file=sys.stderr)
+            if args.stats:
+                print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
+            return 0
+
+    elif input_from_stdin:
+        # --- Stdin input mode ---
         lines = ConfigReader.from_stdin()
+        if not lines:
+            print("Warning: Empty input from stdin.", file=sys.stderr)
+            return 0
 
-    if not lines:
-        print("Error: No input provided. Specify a file or pipe data via stdin.", file=sys.stderr)
-        print("Usage: ibrovix-validator <file> [options]", file=sys.stderr)
-        print("       cat configs.txt | ibrovix-validator [options]", file=sys.stderr)
-        return 1
+        for line in lines:
+            result = parse_line(line)
+            if result is not None:
+                parsed.append(result)
 
-    # Parse all lines
-    parsed: list[dict] = []
-    for line in lines:
-        result = parse_line(line)
-        if result is not None:
-            parsed.append(result)
+        if not parsed:
+            print("Warning: No valid configs found in input.", file=sys.stderr)
+            if args.stats:
+                print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
+            return 0
+
+    else:
+        # --- No input provided — auto-harvest with defaults ---
+        print("📡 No input file provided — automatically harvesting live configs...", file=sys.stderr)
+        print("ℹ️  To disable auto-harvest, specify an input file or pipe data via stdin.", file=sys.stderr)
+        hr = _run_harvester(sources=None, use_defaults=True)
+        if hr is None:
+            print("\nNo configs could be harvested from any source.", file=sys.stderr)
+            if args.stats:
+                print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
+            return 0
+        harvest_result = hr
+        parsed = hr.unique_configs
 
     if not parsed:
-        print("Warning: No valid configs found in input.", file=sys.stderr)
+        print("Warning: No valid configs found.", file=sys.stderr)
         if args.stats:
             print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
         return 0
