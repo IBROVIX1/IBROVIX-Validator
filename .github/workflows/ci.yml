@@ -25,7 +25,7 @@ jobs:
       - name: Install package with all extras
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[tui,dev,geo,harvester]"
+          pip install -e ".[tui,menu,dev,geo,harvester]"
 
       # Fast smoketests: fail fast if modules don't import
       - name: Smoketest — TUI module imports

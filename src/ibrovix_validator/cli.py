@@ -134,11 +134,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show only configs with errors",
     )
 
-    # Interactive TUI
+    # Interactive TUI / Menu
     parser.add_argument(
         "--tui",
         action="store_true",
         help="Launch interactive Terminal User Interface (Textual)",
+    )
+    parser.add_argument(
+        "--menu",
+        action="store_true",
+        help="Launch interactive Rich terminal menu (harvest, validate, SNI match)",
     )
 
     # Output options
@@ -335,6 +340,17 @@ def run_cli(argv: Optional[list[str]] = None) -> int:
         print("Warning: No valid configs found.", file=sys.stderr)
         if args.stats:
             print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
+        return 0
+
+    # Launch interactive Rich menu if requested
+    if args.menu:
+        print("Launching Interactive Menu...", file=sys.stderr)
+        try:
+            from .menu import run_menu
+            run_menu()
+        except ImportError as e:
+            print(f"Error: Menu requires 'rich' package. Install with: pip install rich\n{e}", file=sys.stderr)
+            return 1
         return 0
 
     # Launch interactive TUI if requested

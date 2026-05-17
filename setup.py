@@ -18,6 +18,7 @@ setup(
         "geo": ["aiohttp"],
         "harvester": ["httpx>=0.25.0"],
         "tui": ["textual>=0.40.0"],
+        "menu": ["rich>=13.0.0"],
     },
     entry_points={
         "console_scripts": [
