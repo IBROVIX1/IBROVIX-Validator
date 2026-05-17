@@ -109,9 +109,9 @@ class OutputFormatter:
         sep = "─" * 140
 
         if self.color:
-            lines.append(self._colorize(self.cyan(sep)))
-            lines.append(self._colorize(self.bold(header)))
-            lines.append(self._colorize(self.cyan(sep)))
+            lines.append(self._colorize(Colorizer.cyan(sep)))
+            lines.append(self._colorize(Colorizer.bold(header)))
+            lines.append(self._colorize(Colorizer.cyan(sep)))
         else:
             lines.append(sep)
             lines.append(header)
@@ -147,7 +147,7 @@ class OutputFormatter:
             lines.append(row)
 
         if self.color:
-            lines.append(self._colorize(self.cyan(sep)))
+            lines.append(self._colorize(Colorizer.cyan(sep)))
         else:
             lines.append(sep)
 
@@ -181,7 +181,7 @@ class OutputFormatter:
         """Render statistics summary."""
         lines = []
         if self.color:
-            lines.append(self._colorize(self.bold("\n═══ IBROVIX-Validator Statistics ═══")))
+            lines.append(self._colorize(Colorizer.bold("\n═══ IBROVIX-Validator Statistics ═══")))
 
         lines.append(f"  Total configs:     {stats['total']}")
         lines.append(f"  Alive:             {stats['alive']}")
@@ -202,6 +202,3 @@ class OutputFormatter:
     def _colorize(self, text: str) -> str:
         return text if self.color else text
 
-    @staticmethod
-    def bold(text: str) -> str:
-        return f"\033[1m{text}\033[0m"
