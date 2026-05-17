@@ -17,6 +17,7 @@ setup(
         "dev": ["pytest", "pytest-asyncio", "pytest-cov"],
         "geo": ["aiohttp"],
         "harvester": ["httpx>=0.25.0"],
+        "tui": ["textual>=0.40.0"],
     },
     entry_points={
         "console_scripts": [

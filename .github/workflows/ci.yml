@@ -22,20 +22,32 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package
+      - name: Install package with all extras
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[tui,dev,geo,harvester]"
+
+      # Fast smoketests: fail fast if modules don't import
+      - name: Smoketest — TUI module imports
+        run: python -c "from ibrovix_validator.tui import ValidatorTUI, run_tui; print('TUI OK')"
+
+      - name: Smoketest — Geo-IP module imports
+        run: python -c "from ibrovix_validator.utils.geo import GeoIPResolver, GeoLocation; print('Geo-IP OK')"
+
+      - name: Smoketest — SNI injection module imports
+        run: python -c "from ibrovix_validator.validators.sni_check import SNIChecker; print('SNI OK')"
 
       - name: Check syntax
         run: python -m compileall src/
 
-      - name: Run tests
+      - name: Run full test suite (53 original + 73 v2.0.0 tests)
         run: python -m pytest tests/ -v --cov=ibrovix_validator
 
-      - name: Test CLI help
-        run: ibrovix-validator --help
+      - name: Test CLI — help, version, --tui flag
+        run: |
+          ibrovix-validator --help | grep -q 'tui' && echo "--tui flag in help ✅"
+          ibrovix-validator --version | grep -q '2.0.0' && echo "Version 2.0.0 ✅"
 
-      - name: Test basic parsing
+      - name: Test CLI — basic parse
         run: |
           echo 'vmess://eyJ2IjoiMiIsInBzIjoiVGVzdCIsImFkZCI6ImV4YW1wbGUuY29tIiwicG9ydCI6NDQzLCJpZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsImFpZCI6IjAiLCJzY3kiOiJhdXRvIiwibmV0Ijoid3MiLCJ0eXBlIjoibm9uZSIsImhvc3QiOiJleGFtcGxlLmNvbSIsInBhdGgiOiIvIiwidGxzIjoidGxzIiwic25pIjoiZXhhbXBsZS5jb20ifQ==' | ibrovix-validator --mode parse -o json
