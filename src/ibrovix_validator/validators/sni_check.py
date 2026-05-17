@@ -277,34 +277,31 @@ class SNIChecker(BaseValidator):
           3. Domain-derived candidates (remove/subdomains)
           4. Cached working SNIs for similar hosts
         """
+        seen = set()
         candidates = []
 
+        def _add(candidate: str) -> None:
+            if candidate != configured_sni and candidate not in seen:
+                seen.add(candidate)
+                candidates.append(candidate)
+
         # 1. The host itself
-        if host != configured_sni:
-            candidates.append(host)
+        _add(host)
 
         # 2. Extract domain from host and try variations
         domain = self._extract_domain(host)
-        if domain and domain != configured_sni:
-            candidates.append(domain)
-            # Try www. variant
-            www_domain = f"www.{domain}"
-            if www_domain != configured_sni:
-                candidates.append(www_domain)
+        _add(domain)
+        _add(f"www.{domain}")
 
         # 3. Common SNI candidates
         for common in self._COMMON_SNI_CANDIDATES:
-            if common != configured_sni and common not in candidates:
-                candidates.append(common)
+            _add(common)
 
         # 4. Cached mappings for similar hosts (same domain)
         for key, cached_sni in self._SNI_MAPPING_CACHE.items():
             cached_host = key.split(":")[0]
-            if (cached_host != host and
-                self._extract_domain(cached_host) == domain and
-                cached_sni != configured_sni and
-                cached_sni not in candidates):
-                candidates.append(cached_sni)
+            if cached_host != host and self._extract_domain(cached_host) == domain:
+                _add(cached_sni)
 
         return candidates
 
@@ -351,8 +348,14 @@ class SNIChecker(BaseValidator):
 
     @staticmethod
     def _wildcard_match(hostname: str, pattern: str) -> bool:
-        """Check if hostname matches a wildcard pattern like *.example.com."""
+        """Check if hostname matches a wildcard pattern like *.example.com.
+
+        *.example.com matches sub.example.com (one level of subdomain)
+        but NOT deep.sub.example.com (two levels).
+        """
         if not pattern.startswith("*."):
             return False
         domain_part = pattern[2:]
-        return hostname.endswith(domain_part) and hostname.count(".") == domain_part.count(".")
+        # Must end with ".domain_part" (with leading dot to prevent partial matches)
+        # and have exactly one more label than the domain_part
+        return hostname.endswith("." + domain_part) and hostname.count(".") == domain_part.count(".") + 1

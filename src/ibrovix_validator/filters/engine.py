@@ -143,9 +143,12 @@ class FilterEngine:
                     results.append(cfg)
 
         if self._sort_key:
+            multiplier = 1 if self._sort_ascending else -1
             results.sort(
-                key=lambda c: (c.get(self._sort_key) is None, c.get(self._sort_key) or 0),
-                reverse=not self._sort_ascending,
+                key=lambda c: (
+                    c.get(self._sort_key) is None,  # Nones always last regardless of direction
+                    (c.get(self._sort_key) or 0) * multiplier,
+                ),
             )
         return results
 

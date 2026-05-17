@@ -190,11 +190,14 @@ class GeoIPResolver:
 
     @staticmethod
     def _is_ip(host: str) -> bool:
-        """Check if a string looks like an IP address."""
+        """Check if a string looks like a valid IP address."""
         import re
-        ipv4 = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+        ipv4 = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
+        m = ipv4.match(host)
+        if m:
+            return all(0 <= int(g) <= 255 for g in m.groups())
         ipv6 = re.compile(r"^[0-9a-fA-F:]+$")
-        return bool(ipv4.match(host)) or bool(ipv6.match(host))
+        return bool(ipv6.match(host))
 
     @classmethod
     def clear_cache(cls) -> None:
