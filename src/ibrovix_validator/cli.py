@@ -235,7 +235,30 @@ def run_cli(argv: Optional[list[str]] = None) -> int:
 
     formatter = OutputFormatter(use_color=not args.no_color)
 
-    # Read input — either from harvester or file/stdin
+    # ── Mandatory Interactive Menu (default + explicit) ──
+    # Bare invocation: no flags, no file input, no piped stdin → MUST launch interactive TUI menu
+    # --menu flag: explicit request to launch interactive menu
+    input_from_stdin = not sys.stdin.isatty()
+    is_bare_invocation = not any([
+        args.input,
+        args.harvest, args.sources, args.default_sources,
+        input_from_stdin,
+    ])
+
+    if args.menu or is_bare_invocation:
+        if is_bare_invocation:
+            print("No input provided. Launching interactive menu...", file=sys.stderr)
+        else:
+            print("Launching Interactive Menu...", file=sys.stderr)
+        try:
+            from .menu import run_menu
+            run_menu()
+        except ImportError as e:
+            print(f"Error: Menu requires 'rich' package. Install with: pip install rich\n{e}", file=sys.stderr)
+            return 1
+        return 0
+
+    # ── Non-interactive modes (harvester, file, stdin) ──
     parsed: list[dict] = []
     harvest_result: Optional[HarvestResult] = None
 
@@ -264,14 +287,6 @@ def run_cli(argv: Optional[list[str]] = None) -> int:
         print(f"\n{h.format_result_summary(hr)}", file=sys.stderr)
         print(file=sys.stderr)
         return hr
-
-    # Determine input source priority:
-    #   1. Explicit --harvest / --source / --default-sources flags
-    #   2. Input file argument
-    #   3. Data piped via stdin (non-TTY)
-    #   4. Auto-harvest with defaults (if nothing else is available)
-    #
-    input_from_stdin = not sys.stdin.isatty()
 
     if args.harvest or args.sources or args.default_sources:
         # --- Explicit harvester mode ---
@@ -324,33 +339,14 @@ def run_cli(argv: Optional[list[str]] = None) -> int:
             return 0
 
     else:
-        # --- No input provided — auto-harvest with defaults ---
-        print("📡 No input file provided — automatically harvesting live configs...", file=sys.stderr)
-        print("ℹ️  To disable auto-harvest, specify an input file or pipe data via stdin.", file=sys.stderr)
-        hr = _run_harvester(sources=None, use_defaults=True)
-        if hr is None:
-            print("\nNo configs could be harvested from any source.", file=sys.stderr)
-            if args.stats:
-                print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
-            return 0
-        harvest_result = hr
-        parsed = hr.unique_configs
+        # Should never reach here — bare invocation is caught by the early menu check above
+        print("No input sources available.", file=sys.stderr)
+        return 0
 
     if not parsed:
         print("Warning: No valid configs found.", file=sys.stderr)
         if args.stats:
             print(formatter.format_stats({"total": 0, "by_type": {}, "alive": 0, "dead": 0, "untested": 0}))
-        return 0
-
-    # Launch interactive Rich menu if requested
-    if args.menu:
-        print("Launching Interactive Menu...", file=sys.stderr)
-        try:
-            from .menu import run_menu
-            run_menu()
-        except ImportError as e:
-            print(f"Error: Menu requires 'rich' package. Install with: pip install rich\n{e}", file=sys.stderr)
-            return 1
         return 0
 
     # Launch interactive TUI if requested

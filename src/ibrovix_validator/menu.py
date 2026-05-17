@@ -17,7 +17,6 @@ Menu Options:
 
 import asyncio
 import ssl
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -475,10 +474,9 @@ async def _option_4():
 
 
 async def _option_5():
-    """Exit."""
+    """Exit — gracefully terminate the session."""
     console.print("\n[bold cyan]Thank you for using IBROVIX-Validator![/]")
     console.print("[dim]Exiting...[/]")
-    sys.exit(0)
 
 
 # ── Geo-IP Tagging ──────────────────────────────────────────────────────
@@ -664,8 +662,8 @@ def run_menu():
                     console.print(traceback.format_exc())
 
             console.print()
-            if not Confirm.ask("Return to main menu?", default=True):
-                break
+            # Automatically return to main menu after each action
+            # User can pick [5] Exit to leave at any time
             console.clear()
             _print_banner()
     finally:
