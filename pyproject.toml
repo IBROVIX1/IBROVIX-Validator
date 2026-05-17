@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ibrovix-validator"
-version = "1.0.0"
-description = "High-performance proxy validation and filtering tool for V2Ray, SSH, and Trojan protocols"
+version = "2.0.0"
+description = "High-performance proxy validation and filtering tool with Interactive TUI, Geo-IP, and SNI injection mapping"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

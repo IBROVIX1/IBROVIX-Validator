@@ -31,6 +31,8 @@ class FilterEngine:
     def __init__(self, configs: list[dict]):
         self.configs = list(configs)
         self._rules: list[FilterRule] = []
+        self._sort_key: Optional[str] = None
+        self._sort_ascending: bool = True
 
     def clone(self) -> "FilterEngine":
         """Create a copy with same configs but empty rules."""
@@ -113,20 +115,38 @@ class FilterEngine:
         self._rules.append(FilterRule("handshake_error", "exists", True))
         return self
 
+    def sort_by(self, field: str, ascending: bool = True) -> "FilterEngine":
+        """Sort results by a given field."""
+        self._sort_key = field
+        self._sort_ascending = ascending
+        return self
+
+    def sort_by_latency(self, ascending: bool = True) -> "FilterEngine":
+        """Sort results by latency (ascending = fastest first)."""
+        self._sort_key = "latency_ms"
+        self._sort_ascending = ascending
+        return self
+
     def custom(self, field: str, op: str, value: object, label: str = "") -> "FilterEngine":
         """Add a custom filter rule."""
         self._rules.append(FilterRule(field, op, value, label))
         return self
 
     def apply(self) -> list[dict]:
-        """Execute all rules and return filtered configs."""
+        """Execute all rules and return filtered (and optionally sorted) configs."""
         if not self._rules:
-            return list(self.configs)
+            results = list(self.configs)
+        else:
+            results = []
+            for cfg in self.configs:
+                if self._matches_all(cfg):
+                    results.append(cfg)
 
-        results = []
-        for cfg in self.configs:
-            if self._matches_all(cfg):
-                results.append(cfg)
+        if self._sort_key:
+            results.sort(
+                key=lambda c: (c.get(self._sort_key) is None, c.get(self._sort_key) or 0),
+                reverse=not self._sort_ascending,
+            )
         return results
 
     def _matches_all(self, cfg: dict) -> bool:

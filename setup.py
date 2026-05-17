@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name="ibrovix-validator",
-    version="1.0.0",
-    description="High-performance proxy validation and filtering tool for V2Ray, SSH, and Trojan protocols",
+    version="2.0.0",
+    description="High-performance proxy validation and filtering tool with Interactive TUI, Geo-IP, and SNI injection mapping",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="IBROVIX",
