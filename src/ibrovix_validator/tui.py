@@ -32,11 +32,11 @@ from typing import Optional, ClassVar
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal
 from textual.screen import Screen, ModalScreen
 from textual.widgets import (
-    DataTable, Header, Footer, Input, Label, Static,
-    Button, TextLog, RichLog, ListView, ListItem,
+    DataTable, Header, Footer, Input, Static,
+    Button,
 )
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -478,10 +478,6 @@ class ValidatorTUI(App):
             self.filter_text = event.input.value
             self._apply_filter_and_sort()
             event.input.add_class("hidden")
-
-    def on_input_focus(self, event: Input.Focus) -> None:
-        """Handle search input focus."""
-        pass
 
     def on_blur(self) -> None:
         """Handle focus loss on search input."""
